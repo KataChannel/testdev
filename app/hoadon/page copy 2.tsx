@@ -5,6 +5,14 @@ import Link from "next/link";
 
 interface InvoiceData {
   id: string;
+  nbmst?: string;
+  khhdon?: string;
+  shdon?: string;
+  khmshdon?: string;
+  [key: string]: any;
+}
+
+interface InvoiceDetail {
   [key: string]: any;
 }
 
@@ -18,6 +26,7 @@ const DB_NAME = 'InvoiceDB';
 const DB_VERSION = 3;
 const STORE_NAME_SOLD = 'invoice_sold';
 const STORE_NAME_PURCHASE = 'invoice_purchase';
+const STORE_NAME_DETAILS = 'invoice_details';
 
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -35,6 +44,11 @@ const openDB = (): Promise<IDBDatabase> => {
       
       if (!db.objectStoreNames.contains(STORE_NAME_PURCHASE)) {
         db.createObjectStore(STORE_NAME_PURCHASE, { keyPath: 'id' });
+      }
+
+      // Create new store for invoice details
+      if (!db.objectStoreNames.contains(STORE_NAME_DETAILS)) {
+        db.createObjectStore(STORE_NAME_DETAILS, { keyPath: 'id' });
       }
     };
   });
@@ -55,6 +69,72 @@ const loadFromIndexedDB = async (storeName: string): Promise<InvoiceData[]> => {
     console.error(`Error loading data from ${storeName}:`, error);
     return [];
   }
+};
+
+const saveDetailToIndexedDB = async (invoiceId: string, detail: InvoiceDetail): Promise<void> => {
+  try {
+    const db = await openDB();
+    
+    const transaction = db.transaction([STORE_NAME_DETAILS], 'readwrite');
+    const store = transaction.objectStore(STORE_NAME_DETAILS);
+    
+    const detailWithId = {
+      id: invoiceId,
+      ...detail,
+      lastUpdated: new Date().toISOString()
+    };
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(detailWithId);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error(`Error saving detail for invoice ${invoiceId}:`, error);
+    throw error;
+  }
+};
+
+const checkDetailExists = async (invoiceId: string): Promise<boolean> => {
+  try {
+    const db = await openDB();
+    
+    const transaction = db.transaction([STORE_NAME_DETAILS], 'readonly');
+    const store = transaction.objectStore(STORE_NAME_DETAILS);
+    
+    return new Promise((resolve, reject) => {
+      const request = store.get(invoiceId);
+      request.onsuccess = () => resolve(!!request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error(`Error checking detail for invoice ${invoiceId}:`, error);
+    return false;
+  }
+};
+
+const fetchInvoiceDetail = async (
+  nbmst: string,
+  khhdon: string,
+  shdon: string,
+  khmshdon: string,
+  token: string
+): Promise<InvoiceDetail> => {
+  const url = `https://hoadondientu.gdt.gov.vn:30000/query/invoices/detail?nbmst=${nbmst}&khhdon=${khhdon}&shdon=${shdon}&khmshdon=${khmshdon}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
 };
 
 // Export functions
@@ -121,6 +201,12 @@ export default function HoaDonPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
 
+  // Detail loading states
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailProgress, setDetailProgress] = useState({ current: 0, total: 0, processed: 0, errors: 0 });
+  const [token, setToken] = useState<string>('eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiI1OTAxMjA5NzgyIiwidHlwZSI6MiwiZXhwIjoxNzUyMjIxOTI4LCJpYXQiOjE3NTIxMzU1Mjh9.vJV8m2B2zCm1BjZI6WexG8DW8vmIoI-ZLljpK8ga2zoheXAO3hUBHP3b0CFctLVzLbnheZLXfuuVmp3GGnzhaw');
+  const [delayBetweenRequests, setDelayBetweenRequests] = useState<number>(2000); // Default 2 seconds
+
   useEffect(() => {
     const loadInvoiceData = async () => {
       try {
@@ -176,14 +262,102 @@ export default function HoaDonPage() {
     exportToJSON(filteredInvoices, filename);
   };
 
-  const handleExportAll = (format: 'excel' | 'json') => {
-    const allData = [...invoiceData.sold, ...invoiceData.purchase];
-    const filename = `tat-ca-hoa-don-${new Date().toISOString().split('T')[0]}`;
+  // Utility function to delay execution
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Load all invoice details
+  const loadAllInvoiceDetails = async () => {
+    if (!token.trim()) {
+      alert('Vui lòng nhập Authorization Token');
+      return;
+    }
+
+    const currentInvoices = invoiceData[activeTab];
     
-    if (format === 'excel') {
-      exportToExcel(allData, filename);
-    } else {
-      exportToJSON(allData, filename);
+    // Filter invoices that have required parameters
+    const validInvoices = currentInvoices.filter(invoice => 
+      invoice.nbmst && invoice.khhdon && invoice.shdon && invoice.khmshdon
+    );
+
+    if (validInvoices.length === 0) {
+      alert('Không có hóa đơn nào có đủ thông tin để tải chi tiết (nbmst, khhdon, shdon, khmshdon)');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn có muốn tải chi tiết cho ${validInvoices.length} hóa đơn ${activeTab === 'sold' ? 'bán ra' : 'mua vào'}?\n\n` +
+      `Thời gian ước tính: ${Math.ceil(validInvoices.length * delayBetweenRequests / 1000 / 60)} phút\n` +
+      `Delay giữa các request: ${delayBetweenRequests}ms`
+    );
+
+    if (!confirmed) return;
+
+    setDetailLoading(true);
+    setDetailProgress({ current: 0, total: validInvoices.length, processed: 0, errors: 0 });
+
+    let processed = 0;
+    let errors = 0;
+    let skipped = 0;
+
+    try {
+      for (let i = 0; i < validInvoices.length; i++) {
+        const invoice = validInvoices[i];
+        
+        setDetailProgress(prev => ({ ...prev, current: i + 1 }));
+
+        try {
+          // Check if detail already exists
+          const detailExists = await checkDetailExists(invoice.id);
+          
+          if (detailExists) {
+            skipped++;
+            console.log(`Detail already exists for invoice ${invoice.id}, skipping...`);
+            continue;
+          }
+
+          // Fetch detail from API
+          const detail = await fetchInvoiceDetail(
+            invoice.nbmst!,
+            invoice.khhdon!,
+            invoice.shdon!,
+            invoice.khmshdon!,
+            token
+          );
+
+          // Save to IndexedDB
+          await saveDetailToIndexedDB(invoice.id, detail);
+          processed++;
+          
+          // console.log(`Successfully loaded and saved detail for invoice ${invoice.id}`);
+
+        } catch (error) {
+          errors++;
+          console.error(`Error loading detail for invoice ${invoice.id}:`, error);
+        }
+
+        setDetailProgress(prev => ({ ...prev, processed, errors }));
+
+        // Add delay between requests (except for the last one)
+        if (i < validInvoices.length - 1) {
+          await delay(delayBetweenRequests);
+        }
+      }
+
+      // Show completion message
+      const message = `Hoàn thành tải chi tiết hóa đơn!\n\n` +
+        `Tổng số: ${validInvoices.length}\n` +
+        `Đã xử lý: ${processed}\n` +
+        `Bỏ qua (đã có): ${skipped}\n` +
+        `Lỗi: ${errors}`;
+      
+      alert(message);
+
+    } catch (error) {
+      console.error('Error in loadAllInvoiceDetails:', error);
+      alert(`Lỗi khi tải chi tiết hóa đơn: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setDetailLoading(false);
+      setDetailProgress({ current: 0, total: 0, processed: 0, errors: 0 });
     }
   };
 
@@ -219,45 +393,78 @@ export default function HoaDonPage() {
         </div>
       </div>
 
-      {/* Export Buttons */}
-      <div className="mb-6">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Xuất dữ liệu hiện tại:</span>
-            <button
-              onClick={handleExportExcel}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-              disabled={filteredInvoices.length === 0}
-            >
-              📊 Excel/CSV
-            </button>
-            <button
-              onClick={handleExportJSON}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              disabled={filteredInvoices.length === 0}
-            >
-              📄 JSON
-            </button>
+      {/* Detail Loading Controls */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Tải chi tiết hóa đơn từ API</h2>
+        
+        {/* Token Input */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Authorization Token:</label>
+          <textarea
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-20 text-xs"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            placeholder="Bearer token"
+            disabled={detailLoading}
+          />
+        </div>
+
+        {/* Delay Setting and Load Button */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">Delay (ms):</label>
+            <input
+              type="number"
+              min="500"
+              max="10000"
+              step="500"
+              className="w-24 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              value={delayBetweenRequests}
+              onChange={(e) => setDelayBetweenRequests(parseInt(e.target.value) || 2000)}
+              disabled={detailLoading}
+            />
+            <span className="text-xs text-gray-600">(2000ms khuyến nghị)</span>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Xuất tất cả:</span>
-            <button
-              onClick={() => handleExportAll('excel')}
-              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-              disabled={invoiceData.sold.length + invoiceData.purchase.length === 0}
-            >
-              📊 Tất cả Excel
-            </button>
-            <button
-              onClick={() => handleExportAll('json')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
-              disabled={invoiceData.sold.length + invoiceData.purchase.length === 0}
-            >
-              📄 Tất cả JSON
-            </button>
-          </div>
+          <button
+            onClick={loadAllInvoiceDetails}
+            disabled={detailLoading || !token.trim()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          >
+            {detailLoading ? 'Đang tải...' : `🔄 Tải tất cả chi tiết ${activeTab === 'sold' ? 'bán ra' : 'mua vào'}`}
+          </button>
+
+          {detailLoading && (
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div>
+                {detailProgress.current}/{detailProgress.total} ({Math.round((detailProgress.current / detailProgress.total) * 100)}%) | 
+                Xử lý: {detailProgress.processed} | Lỗi: {detailProgress.errors}
+              </div>
+              <div className="w-32 bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(detailProgress.current / detailProgress.total) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Export Buttons */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={handleExportExcel}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+        >
+          📊 Xuất Excel
+        </button>
+        <button
+          onClick={handleExportJSON}
+          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+        >
+          📄 Xuất JSON
+        </button>
       </div>
 
       {/* Tabs */}
@@ -269,6 +476,7 @@ export default function HoaDonPage() {
               ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
           }`}
+          disabled={detailLoading}
         >
           Hóa đơn bán ra ({invoiceData.sold.length})
         </button>
@@ -279,6 +487,7 @@ export default function HoaDonPage() {
               ? 'bg-white text-green-600 shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
           }`}
+          disabled={detailLoading}
         >
           Hóa đơn mua vào ({invoiceData.purchase.length})
         </button>
@@ -292,6 +501,7 @@ export default function HoaDonPage() {
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
+          disabled={detailLoading}
         />
       </div>
 
@@ -322,12 +532,15 @@ export default function HoaDonPage() {
                       Trạng thái
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      API Params
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Thao tác
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentInvoices.map((invoice, index) => (
+                  {currentInvoices.map((invoice) => (
                     <tr key={invoice.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {invoice.id}
@@ -358,6 +571,17 @@ export default function HoaDonPage() {
                            invoice.trangThai || 'N/A'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                        {invoice.nbmst && invoice.khhdon && invoice.shdon && invoice.khmshdon ? (
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded">
+                            ✓ Đầy đủ
+                          </span>
+                        ) : (
+                          <span className="bg-red-100 text-red-800 px-2 py-1 rounded">
+                            ✗ Thiếu
+                          </span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <Link
                           href={`/hoadonchitiet?id=${invoice.id}`}
@@ -383,7 +607,7 @@ export default function HoaDonPage() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
+                  disabled={currentPage === 1 || detailLoading}
                   className="px-3 py-1 text-sm bg-gray-200 text-gray-600 rounded hover:bg-gray-300 disabled:opacity-50"
                 >
                   Trước
@@ -406,11 +630,12 @@ export default function HoaDonPage() {
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
+                      disabled={detailLoading}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === pageNum
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                      }`}
+                      } disabled:opacity-50`}
                     >
                       {pageNum}
                     </button>
@@ -419,7 +644,7 @@ export default function HoaDonPage() {
                 
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage === totalPages || detailLoading}
                   className="px-3 py-1 text-sm bg-gray-200 text-gray-600 rounded hover:bg-gray-300 disabled:opacity-50"
                 >
                   Sau

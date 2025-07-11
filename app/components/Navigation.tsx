@@ -14,6 +14,7 @@ export default function Navigation() {
     { href: '/hoadonchitiet', label: 'Hóa đơn chi tiết' },
     { href: '/xuatnhapton', label: 'Xuất nhập tồn' },
     { href: '/facebook', label: 'Facebook' },
+    { href: '/callcenter', label: 'Call Center' },
   ];
 
   const isActive = (path: string) => {

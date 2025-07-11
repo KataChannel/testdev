@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 interface Post {
@@ -61,6 +62,7 @@ export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [messages, setMessages] = useState<Conversation[]>([]);
+  const [listProfile, setListProfile] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
@@ -87,9 +89,16 @@ export default function Home() {
       if (data.data && data.data.length > 0 && data.data[0].id === '1') {
         setIsUsingMockData(true);
       }
-      
-      if (type === 'posts') setPosts(data.data || []);
-      if (type === 'comments') setComments(data.data || []);
+
+      if (type === 'messages') {
+        const Listid = data.data.map((v: any) => v.participants);
+        const profile = Listid.map((v: any) => v.data).flat().filter((v: any)=> v.id !== '272459726955766');
+        setListProfile(profile);
+
+      }
+
+      // if (type === 'posts') setPosts(data.data || []);
+      // if (type === 'comments') setComments(data.data || []);
       if (type === 'messages') setMessages(data.data || []);
       
     } catch (error) {
@@ -118,6 +127,25 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Facebook Page Interactions</h1>
+      {
+        listProfile.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold mb-4">List of Participants</h2>
+            <ul className="list-disc pl-5 space-y-2">
+              {listProfile.map((profile, index) => (
+                <li key={index} className="text-gray-800">
+                  <Link
+                    href={`https://www.facebook.com/profile.php?id=${profile.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {profile.name || 'Unknown Participant'}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
 
       {/* Mock Data Warning */}
       {isUsingMockData && (

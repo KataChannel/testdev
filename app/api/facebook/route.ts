@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const FACEBOOK_PAGE_ID = process.env.FACEBOOK_PAGE_ID;
-const FACEBOOK_ACCESS_TOKEN = process.env.FACEBOOK_ACCESS_TOKEN;
-const FACEBOOK_API_VERSION = process.env.FACEBOOK_API_VERSION || 'v18.0';
+const FACEBOOK_PAGE_ID = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_ID;
+const FACEBOOK_ACCESS_TOKEN = process.env.NEXT_PUBLIC_FACEBOOK_ACCESS_TOKEN;
+const FACEBOOK_API_VERSION = process.env.NEXT_PUBLIC_FACEBOOK_API_VERSION || 'v18.0';
 
 export async function GET(request: NextRequest) {
     try {
@@ -102,6 +102,7 @@ export async function GET(request: NextRequest) {
                     `https://graph.facebook.com/${FACEBOOK_API_VERSION}/${FACEBOOK_PAGE_ID}/conversations?` +
                     new URLSearchParams({
                         fields: 'id,participants,messages{message,from,created_time}',
+                        // fields: 'id,participants,messages{message,from,created_time}',
                         access_token: FACEBOOK_ACCESS_TOKEN!,
                     })
                 );
@@ -116,7 +117,7 @@ export async function GET(request: NextRequest) {
                     });
                 }
 
-                const data = await response.json();
+                const data = await response.json();                
                 return NextResponse.json(data);
             } catch (error) {
                 console.log('Facebook API error:', error);

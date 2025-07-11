@@ -47,11 +47,13 @@ interface InventoryItem {
     sluong: number;
     thtien: number;
     count: number;
+    invoices: string[]; // Store invoice IDs
   };
   xuat: {
     sluong: number;
     thtien: number;
     count: number;
+    invoices: string[]; // Store invoice IDs
   };
   ton: {
     sluong: number;
@@ -110,6 +112,41 @@ const loadFromIndexedDB = async (storeName: string): Promise<any[]> => {
   }
 };
 
+// Fetch data from server API
+const fetchFromServerAPI = async (): Promise<{
+  soldInvoices: any[],
+  purchaseInvoices: any[],
+  invoiceDetails: any[]
+}> => {
+  try {
+    // Replace with your actual API endpoints
+    const [soldResponse, purchaseResponse, detailsResponse] = await Promise.all([
+      fetch('/api/invoices/sold'),
+      fetch('/api/invoices/purchase'),
+      fetch('/api/invoices/details')
+    ]);
+
+    if (!soldResponse.ok || !purchaseResponse.ok || !detailsResponse.ok) {
+      throw new Error('Lỗi khi tải dữ liệu từ server');
+    }
+
+    const [soldData, purchaseData, detailsData] = await Promise.all([
+      soldResponse.json(),
+      purchaseResponse.json(),
+      detailsResponse.json()
+    ]);
+
+    return {
+      soldInvoices: soldData || [],
+      purchaseInvoices: purchaseData || [],
+      invoiceDetails: detailsData || []
+    };
+  } catch (error) {
+    console.error('Error fetching from server:', error);
+    throw error;
+  }
+};
+
 export default function XuatNhapTonPage() {
   const [invoiceDetails, setInvoiceDetails] = useState<InvoiceDetail[]>([]);
   const [soldInvoices, setSoldInvoices] = useState<InvoiceData[]>([]);
@@ -121,26 +158,50 @@ export default function XuatNhapTonPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [filterMST, setFilterMST] = useState('5901209782'); // Default MST filter
+  const [dataSource, setDataSource] = useState<'indexeddb' | 'server' | null>(null);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
+        // First try to load from IndexedDB
         const [detailsData, soldData, purchaseData] = await Promise.all([
           loadFromIndexedDB(STORE_NAME_DETAILS),
           loadFromIndexedDB(STORE_NAME_SOLD),
           loadFromIndexedDB(STORE_NAME_PURCHASE)
         ]);
 
-        setInvoiceDetails(detailsData);
-        setSoldInvoices(soldData);
-        setPurchaseInvoices(purchaseData);
+        // Check if IndexedDB has sufficient data
+        const hasData = detailsData.length > 0 || soldData.length > 0 || purchaseData.length > 0;
+
+        if (hasData) {
+          setInvoiceDetails(detailsData);
+          setSoldInvoices(soldData);
+          setPurchaseInvoices(purchaseData);
+          setDataSource('indexeddb');
+        } else {
+          // If IndexedDB is empty, try to fetch from server
+          setError('Không có dữ liệu trong IndexedDB. Đang thử tải từ server...');
+          
+          try {
+            const serverData = await fetchFromServerAPI();
+            setInvoiceDetails(serverData.invoiceDetails);
+            setSoldInvoices(serverData.soldInvoices);
+            setPurchaseInvoices(serverData.purchaseInvoices);
+            setDataSource('server');
+            setError(null);
+          } catch (serverError) {
+            setError('Không thể tải dữ liệu từ IndexedDB và server. Vui lòng kiểm tra kết nối hoặc import dữ liệu.');
+          }
+        }
         
       } catch (error) {
         console.error('Error loading data:', error);
-        setError('Lỗi khi tải dữ liệu từ IndexedDB');
+        setError('Lỗi khi tải dữ liệu');
       } finally {
         setLoading(false);
       }
@@ -181,8 +242,8 @@ export default function XuatNhapTonPage() {
           if (!inventory[productName]) {
             inventory[productName] = {
               ten: productName,
-              nhap: { sluong: 0, thtien: 0, count: 0 },
-              xuat: { sluong: 0, thtien: 0, count: 0 },
+              nhap: { sluong: 0, thtien: 0, count: 0, invoices: [] },
+              xuat: { sluong: 0, thtien: 0, count: 0, invoices: [] },
               ton: { sluong: 0, thtien: 0 }
             };
           }
@@ -191,10 +252,16 @@ export default function XuatNhapTonPage() {
             inventory[productName].nhap.sluong += quantity;
             inventory[productName].nhap.thtien += amount;
             inventory[productName].nhap.count += 1;
+            if (!inventory[productName].nhap.invoices.includes(detail.id)) {
+              inventory[productName].nhap.invoices.push(detail.id);
+            }
           } else {
             inventory[productName].xuat.sluong += quantity;
             inventory[productName].xuat.thtien += amount;
             inventory[productName].xuat.count += 1;
+            if (!inventory[productName].xuat.invoices.includes(detail.id)) {
+              inventory[productName].xuat.invoices.push(detail.id);
+            }
           }
 
           // Calculate inventory balance (ton = nhap - xuat)
@@ -255,6 +322,17 @@ export default function XuatNhapTonPage() {
     }
   );
 
+  // Function to handle invoice link click
+  const handleInvoiceClick = (invoiceId: string) => {
+    // Navigate to invoice detail page
+    window.open(`/hoadon/${invoiceId}`, '_blank');
+  };
+
+  // Function to toggle product details
+  const toggleProductDetails = (productName: string) => {
+    setExpandedProduct(expandedProduct === productName ? null : productName);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -265,21 +343,34 @@ export default function XuatNhapTonPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <strong>Lỗi:</strong> {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-4">Báo cáo Xuất Nhập Tồn</h1>
+        
+        {/* Data Source Indicator */}
+        <div className="mb-4 p-3 bg-gray-100 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Nguồn dữ liệu:</span>
+            <span className={`px-2 py-1 text-xs rounded ${
+              dataSource === 'indexeddb' ? 'bg-green-100 text-green-800' : 
+              dataSource === 'server' ? 'bg-blue-100 text-blue-800' : 
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {dataSource === 'indexeddb' ? '📱 IndexedDB (Local)' : 
+               dataSource === 'server' ? '🌐 Server API' : 
+               '❓ Không xác định'}
+            </span>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+            <strong>Thông báo:</strong> {error}
+          </div>
+        )}
         
         {/* MST Filter */}
         <div className="mb-4">
@@ -372,48 +463,110 @@ export default function XuatNhapTonPage() {
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tồn kho
                     </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Thao tác
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {currentItems.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {item.ten}
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm">
-                        <div className="text-blue-600 font-semibold">
-                          {item.nhap.sluong.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {item.nhap.thtien.toLocaleString()} VND
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          ({item.nhap.count} lần)
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm">
-                        <div className="text-red-600 font-semibold">
-                          {item.xuat.sluong.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {item.xuat.thtien.toLocaleString()} VND
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          ({item.xuat.count} lần)
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm">
-                        <div className={`font-semibold ${
-                          item.ton.sluong > 0 ? 'text-green-600' : 
-                          item.ton.sluong < 0 ? 'text-red-600' : 'text-gray-600'
-                        }`}>
-                          {item.ton.sluong.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {item.ton.thtien.toLocaleString()} VND
-                        </div>
-                      </td>
-                    </tr>
+                    <>
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                          {item.ten}
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm">
+                          <div className="text-blue-600 font-semibold">
+                            {item.nhap.sluong.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.nhap.thtien.toLocaleString()} VND
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            ({item.nhap.count} lần)
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm">
+                          <div className="text-red-600 font-semibold">
+                            {item.xuat.sluong.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.xuat.thtien.toLocaleString()} VND
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            ({item.xuat.count} lần)
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm">
+                          <div className={`font-semibold ${
+                            item.ton.sluong > 0 ? 'text-green-600' : 
+                            item.ton.sluong < 0 ? 'text-red-600' : 'text-gray-600'
+                          }`}>
+                            {item.ton.sluong.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.ton.thtien.toLocaleString()} VND
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm">
+                          <button
+                            onClick={() => toggleProductDetails(item.ten)}
+                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                          >
+                            {expandedProduct === item.ten ? '🔼 Ẩn' : '🔽 Xem HĐ'}
+                          </button>
+                        </td>
+                      </tr>
+                      
+                      {/* Expanded invoice details */}
+                      {expandedProduct === item.ten && (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-4 bg-gray-50">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {/* Nhập kho invoices */}
+                              {item.nhap.invoices.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold text-blue-700 mb-2">
+                                    📥 Hóa đơn nhập ({item.nhap.invoices.length})
+                                  </h4>
+                                  <div className="space-y-1">
+                                    {item.nhap.invoices.map(invoiceId => (
+                                      <button
+                                        key={invoiceId}
+                                        onClick={() => handleInvoiceClick(invoiceId)}
+                                        className="block w-full text-left px-2 py-1 text-xs bg-blue-100 hover:bg-blue-200 rounded text-blue-800 transition-colors"
+                                      >
+                                        🔗 {invoiceId}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Xuất kho invoices */}
+                              {item.xuat.invoices.length > 0 && (
+                                <div>
+                                  <h4 className="font-semibold text-red-700 mb-2">
+                                    📤 Hóa đơn xuất ({item.xuat.invoices.length})
+                                  </h4>
+                                  <div className="space-y-1">
+                                    {item.xuat.invoices.map(invoiceId => (
+                                      <button
+                                        key={invoiceId}
+                                        onClick={() => handleInvoiceClick(invoiceId)}
+                                        className="block w-full text-left px-2 py-1 text-xs bg-red-100 hover:bg-red-200 rounded text-red-800 transition-colors"
+                                      >
+                                        🔗 {invoiceId}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
                   ))}
                 </tbody>
               </table>
@@ -456,10 +609,15 @@ export default function XuatNhapTonPage() {
           onClick={() => {
             const data = {
               exportDate: new Date().toISOString(),
+              dataSource,
               mst: filterMST,
               totalProducts: filteredInventory.length,
               totals,
-              inventory: filteredInventory
+              inventory: filteredInventory.map(item => ({
+                ...item,
+                nhap: { ...item.nhap, invoices: item.nhap.invoices },
+                xuat: { ...item.xuat, invoices: item.xuat.invoices }
+              }))
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -477,7 +635,7 @@ export default function XuatNhapTonPage() {
         
         <button
           onClick={() => {
-            const headers = ['Tên sản phẩm', 'Nhập - SL', 'Nhập - Tiền', 'Xuất - SL', 'Xuất - Tiền', 'Tồn - SL', 'Tồn - Tiền'];
+            const headers = ['Tên sản phẩm', 'Nhập - SL', 'Nhập - Tiền', 'Xuất - SL', 'Xuất - Tiền', 'Tồn - SL', 'Tồn - Tiền', 'HĐ Nhập', 'HĐ Xuất'];
             const csvContent = [
               headers.join(','),
               ...filteredInventory.map(item => [
@@ -487,7 +645,9 @@ export default function XuatNhapTonPage() {
                 item.xuat.sluong,
                 item.xuat.thtien,
                 item.ton.sluong,
-                item.ton.thtien
+                item.ton.thtien,
+                `"${item.nhap.invoices.join('; ')}"`,
+                `"${item.xuat.invoices.join('; ')}"`
               ].join(','))
             ].join('\n');
             

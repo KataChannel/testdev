@@ -1,0 +1,1368 @@
+{
+	"info": {
+		"_postman_id": "2905f884-d5af-45d2-a4c1-26c5d9c04577",
+		"name": "API Tổng đài ảo",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "13024451",
+		"_collection_link": "https://dark-moon-422181.postman.co/workspace/Taza-Skin-Clinic~022da716-879c-432c-9c94-70092361c780/collection/13024451-2905f884-d5af-45d2-a4c1-26c5d9c04577?action=share&source=collection_link&creator=13024451"
+	},
+	"item": [
+		{
+			"name": "Webhook",
+			"item": [
+				{
+					"name": "Đổ chuông (RING)",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {
+							"content-type": true
+						}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"caller\": \"0977051367\",\r\n        \"extension\": \"1001\",\r\n        \"created_at\": \"2020-01-28 10:02:29\"\r\n    },\r\n    \"channel_state\": \"RING\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "API URL đối tác cấp",
+							"host": [
+								"API URL đối tác cấp"
+							]
+						},
+						"description": "Nhận thông tin khi có máy nhánh đổ chuông cuộc gọi. (Cuộc gọi vào)\n- **caller** : số gọi đến\n- **extension** : máy nhánh đang trả lời\n- **created_at** : thời gian khởi tạo sự kiện\n- **channel_state** : trạng thái sự kiện (RING)"
+					},
+					"response": []
+				},
+				{
+					"name": "Trả lời (ANSWER)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"data\": {\r\n        \"caller\": \"0977051367\",\r\n        \"extension\": \"1001\",\r\n        \"created_at\": \"2020-01-28 10: 02: 29\"\r\n    },\r\n    \"channel_state\": \"ANSWER\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "API URL đối tác cấp",
+							"host": [
+								"API URL đối tác cấp"
+							]
+						},
+						"description": "Nhận thông tin khi có máy nhánh trả lời cuộc gọi. (Tất cả cuộc gọi)\n- **caller** : số gọi đến\n- **extension** : máy nhánh đang trả lời\n- **created_at** : thời gian khởi tạo sự kiện\n- **channel_state** : trạng thái sự kiện (ANSWER)"
+					},
+					"response": []
+				},
+				{
+					"name": "Kết thúc cuộc gọi (HANGUP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"uuid\": \"6c6f0266-ba15-11ea-b27f-a7664e633f8b\",\r\n    \"direction\": \"outbound\",\r\n    \"caller_id_number\": \"1001\",\r\n    \"outbound_caller_id_number\": \"842871001996\",\r\n    \"destination_number\": \"0977051367\",\r\n    \"start_stamp\": \"2020-11-20 08:28:53\",\r\n    \"answer_stamp\": \"2020-11-20 08:28:53\",\r\n    \"end_stamp\": \"2020-11-20 08:29:11\",\r\n    \"duration\": \"20\",\r\n    \"billsec\": \"6\",\r\n    \"sip_hangup_disposition\": \"\",\r\n    \"record_path\": \"/demo/archive/2020/Jun/29/6c6f0266-ba15-11ea-b27f-a7664e633f8b.mp3\",\r\n    \"call_status\": \"ANSWERED\",\r\n    \"phonenumber\": \"842871001996\",\r\n    \"domain_name\": \"demo\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "API URL đối tác cấp",
+							"host": [
+								"API URL đối tác cấp"
+							]
+						},
+						"description": "Nhận thông tin khi có cuộc gọi kết thúc. (Tất cả cuộc gọi)\n- **uuid** : dùng để định danh cuộc gọi trên hệ thống, mỗi cuộc gọi có 1 uuid duy nhất.\n- **direction** :\n - inbound : exten nhận cuộc gọi từ số bên ngoài tổng đài\n - outbound : exten thực hiện cuộc gọi đến số bên ngoài tổng đài\n - local : cuộc gọi nội bộ\n- **caller_id_number** : exten thực hiện cuộc gọi (chủ gọi)\n- **outbound_caller_id_number** : số SIP dùng để gọi ra\n- **destination_number** : số nhận cuộc gọi (bị gọi)\n- **start_stamp** : thời gian bắt đầu gọi\n- **end_stamp** : thời gian kết thúc cuộc gọi\n- **answer_stamp** : thời gian bắt đầu trả lời cuộc gọi\n- **duration** : tổng thời gian cuộc gọi (start to end)\n- **billsec** : tổng thời gian đàm thoại (answer to end)\n- **sip_hangup_disposition** :\n - by_caller : chủ gọi tắt máy\n - by_callee : bị gọi tắt máy\n- **call_status** : \n - ANSWER : cuộc gọi thành công\n - VOICEMAIL : cuộc gọi được chuyển đến hộp thư thoại\n - MISSED : cuộc gọi nhỡ\n - CANCELED : cuộc gọi bị từ chối\n - FAILED : cuộc gọi bị lỗi\n - UNKNOWN : chưa xác định được nguyên nhân\n- **record_path** : đường dẫn lưu trữ file ghi âm."
+					},
+					"response": []
+				}
+			],
+			"description": "Trả về các thông tin khi xảy ra các sự kiện\n- Đổ chuông (RING)\n- Trả lời (ANSWER)\n- Kết thúc  (HANGUP)"
+		},
+		{
+			"name": "Lịch sử cuộc gọi",
+			"item": [
+				{
+					"name": "Tất cả cuộc gọi",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/cdr?domain_name={{domain_name}}&from=2020-05-01 00:00:00&to=2020-06-01 23:59:59&limit=2&offset=0",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"cdr"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}"
+								},
+								{
+									"key": "from",
+									"value": "2020-05-01 00:00:00"
+								},
+								{
+									"key": "to",
+									"value": "2020-06-01 23:59:59"
+								},
+								{
+									"key": "limit",
+									"value": "2"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								},
+								{
+									"key": "caller_id_number",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "destination_number",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Lấy danh sách tất cả cuộc gọi, lọc theo từng điều kiện:\n- **domain_name** : thông số được cung cấp ban đầu.\n- **from** : thời gian bắt đầu lấy cdr, định dạng “Y-m-d H:i:s”\n- **to** : thời gian kết thúc lấy cdr, định dạng “Y-m-d H:i:s”\n- **limit** : giới hạn dữ liệu trả về trên mỗi request, mặc định là 20, tối đa là 100.\n- **offset** : giá trị bắt đầu trong dữ liệu được lấy\n- **caller_id_number** : tìm kiếm theo caller_id_number\n- **destination_number** : tìm kiếm theo destination_number"
+					},
+					"response": [
+						{
+							"name": "Xác thực thất bại",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/cdr?domain_name=demo1&from=2020-05-01 00:00:00&to=2020-06-01 23:59:59&limit=2&offset=0",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"cdr"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo1",
+											"description": "tham số bắt buộc"
+										},
+										{
+											"key": "from",
+											"value": "2020-05-01 00:00:00"
+										},
+										{
+											"key": "to",
+											"value": "2020-06-01 23:59:59"
+										},
+										{
+											"key": "limit",
+											"value": "2"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:24:39 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Xác thực không thành công.\"\n}"
+						},
+						{
+							"name": "Thành công",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/cdr?domain_name=demo&from=2020-05-01 00:00:00&to=2020-06-01 23:59:59&limit=2&offset=0",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"cdr"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "from",
+											"value": "2020-05-01 00:00:00"
+										},
+										{
+											"key": "to",
+											"value": "2020-06-01 23:59:59"
+										},
+										{
+											"key": "limit",
+											"value": "2"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:10:11 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"result_in_page\": 2,\n    \"start_offset\": 0,\n    \"next_offset\": 2,\n    \"data\": [\n        {\n            \"uuid\": \"44d609ce-905e-11ea-a4be-298cb2d61b72\",\n            \"domain_name\": \"demo\",\n            \"direction\": \"outbound\",\n            \"caller_id_number\": \"1001\",\n            \"outbound_caller_id_number\": \"842871001100\",\n            \"destination_number\": \"0977051367\",\n            \"start_stamp\": \"2020-05-07 19:28:34\",\n            \"answer_stamp\": null,\n            \"end_stamp\": \"2020-05-07 19:28:34\",\n            \"duration\": \"0\",\n            \"billsec\": \"0\",\n            \"sip_hangup_disposition\": \"by_callee\",\n            \"record_path\": null,\n            \"phonenumber\": \"842871001100\",\n            \"call_status\": \"CANCELED\"\n        },\n        {\n            \"uuid\": \"0c4192b0-8b52-11ea-b89d-298cb2d61b72\",\n            \"domain_name\": \"demo\",\n            \"direction\": \"outbound\",\n            \"caller_id_number\": \"1003\",\n            \"outbound_caller_id_number\": \"842871001100\",\n            \"destination_number\": \"0977051367\",\n            \"start_stamp\": \"2020-05-01 09:18:29\",\n            \"answer_stamp\": \"2020-05-01 09:18:40\",\n            \"end_stamp\": \"2020-05-01 09:24:45\",\n            \"duration\": \"376\",\n            \"billsec\": \"365\",\n            \"sip_hangup_disposition\": \"by_callee\",\n            \"record_path\": \"/demo/archive/2020/May/01/0c4192b0-8b52-11ea-b89d-298cb2d61b72.mp3\",\n            \"phonenumber\": \"842871001100\",\n            \"call_status\": \"ANSWER\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "Dữ liệu không đúng",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/cdr?domain_name=demo&from=2020-05-01&to=2020-06-01 23:59:59&limit=2&offset=0",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"cdr"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo",
+											"description": "tham số bắt buộc"
+										},
+										{
+											"key": "from",
+											"value": "2020-05-01"
+										},
+										{
+											"key": "to",
+											"value": "2020-06-01 23:59:59"
+										},
+										{
+											"key": "limit",
+											"value": "2"
+										},
+										{
+											"key": "offset",
+											"value": "0"
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:27:03 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \" `from` không đúng định dạng.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Chi tiết cuộc gọi",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/detail?domain_name={{domain_name}}&uuid=44d609ce-905e-11ea-a4be-298cb2d61b72",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"detail"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}",
+									"description": "tham số bắt buộc"
+								},
+								{
+									"key": "uuid",
+									"value": "44d609ce-905e-11ea-a4be-298cb2d61b72",
+									"description": "tham số bắt buộc"
+								}
+							]
+						},
+						"description": "Thông tin chi tiết cuộc gọi\n\n- **domain_name** : thông số được cung cấp ban đầu.\n- **uuid** : dùng để định danh cuộc gọi trên hệ thống, mỗi cuộc gọi có 1 uuid duy nhất."
+					},
+					"response": [
+						{
+							"name": "Dữ liệu không đúng",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/detail?domain_name=demo",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"detail"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo",
+											"description": "tham số bắt buộc"
+										},
+										{
+											"key": "uuid",
+											"value": "44d609ce-905e-11ea-a4be-298cb2d61b72",
+											"description": "tham số bắt buộc",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:28:32 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"UUID không đúng.\"\n}"
+						},
+						{
+							"name": "Thành công",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/detail?domain_name=demo&uuid=44d609ce-905e-11ea-a4be-298cb2d61b72",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"detail"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "uuid",
+											"value": "44d609ce-905e-11ea-a4be-298cb2d61b72"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:19:11 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 1,\n    \"data\": [\n        {\n            \"uuid\": \"44d609ce-905e-11ea-a4be-298cb2d61b72\",\n            \"domain_name\": \"demo\",\n            \"direction\": \"outbound\",\n            \"caller_id_number\": \"1001\",\n            \"outbound_caller_id_number\": \"842871001100\",\n            \"destination_number\": \"0977051367\",\n            \"start_stamp\": \"2020-05-07 19:28:34\",\n            \"answer_stamp\": null,\n            \"end_stamp\": \"2020-05-07 19:28:34\",\n            \"duration\": \"0\",\n            \"billsec\": \"0\",\n            \"sip_hangup_disposition\": \"by_callee\",\n            \"record_path\": null,\n            \"phonenumber\": \"842871001100\",\n            \"call_status\": \"CANCELED\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "Chi tiết cuộc gọi Inbound",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/detail?domain_name={{domain_name}}&uuid=02c4921a-e83f-11ea-ac51-a34a86bb7d75",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"detail"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "{{domain_name}}",
+											"description": "tham số bắt buộc"
+										},
+										{
+											"key": "uuid",
+											"value": "02c4921a-e83f-11ea-ac51-a34a86bb7d75",
+											"description": "tham số bắt buộc"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 27 Aug 2020 08:28:27 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "X-Powered-By",
+									"value": "PHP/7.2.33"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 1,\n    \"data\": [\n        {\n            \"uuid\": \"02c4921a-e83f-11ea-ac51-a34a86bb7d75\",\n            \"domain_name\": \"pbx.com.vn\",\n            \"direction\": \"inbound\",\n            \"caller_id_number\": \"0977051367\",\n            \"outbound_caller_id_number\": null,\n            \"destination_number\": \"1001\",\n            \"start_stamp\": \"2020-08-27 15:26:31\",\n            \"answer_stamp\": \"2020-08-27 15:26:31\",\n            \"end_stamp\": \"2020-08-27 15:27:34\",\n            \"duration\": \"63\",\n            \"billsec\": \"63\",\n            \"sip_hangup_disposition\": \"by_callee\",\n            \"record_path\": \"/pbx.com.vn/archive/2020/Aug/27/02c4921a-e83f-11ea-ac51-a34a86bb7d75.mp3\",\n            \"phonenumber\": \"842871001234\",\n            \"call_status\": \"ANSWER\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "File ghi âm (Tải về)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/record?domain_name={{domain_name}}&record_path=/demo01/archive/2020/Jul/03/bb4d5f18-bcdb-11ea-901d-a7664e633f8b.mp3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"record"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}"
+								},
+								{
+									"key": "record_path",
+									"value": "/demo01/archive/2020/Jul/03/bb4d5f18-bcdb-11ea-901d-a7664e633f8b.mp3"
+								}
+							]
+						},
+						"description": "Tải về file ghi âm cuộc gọi.\n\n- **domain_name** : thông số được cung cấp ban đầu.\n- **record_path** : đường dẫn chứa file ghi âm."
+					},
+					"response": []
+				},
+				{
+					"name": "File ghi âm (Play)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/recordings/demo/archive/2020/Aug/11/b4c47ea3-f2ab-43b1-b0ff-214d9cf7f90e.mp3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"recordings",
+								"demo",
+								"archive",
+								"2020",
+								"Aug",
+								"11",
+								"b4c47ea3-f2ab-43b1-b0ff-214d9cf7f90e.mp3"
+							],
+							"query": [
+								{
+									"key": "record_path",
+									"value": "/demo01/archive/2020/Jul/03/bb4d5f18-bcdb-11ea-901d-a7664e633f8b.mp3",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Tải về file ghi âm cuộc gọi.\n\n- **domain_name** : thông số được cung cấp ban đầu.\n- **record_path** : đường dẫn chứa file ghi âm."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Thực hiện gọi",
+			"item": [
+				{
+					"name": "Click to call",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/clicktocall?domain_name={{domain_name}}&phone=0977051367&callerid=842871001100&extension=101&record",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"clicktocall"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}"
+								},
+								{
+									"key": "phone",
+									"value": "0977051367"
+								},
+								{
+									"key": "callerid",
+									"value": "842871001100"
+								},
+								{
+									"key": "extension",
+									"value": "101"
+								},
+								{
+									"key": "record",
+									"value": ""
+								}
+							]
+						},
+						"description": "- **phone** : Số điện thoại cần gọi.\n- **domain_name** : thông số được cung cấp ban đầu.\n- **callerid** : chỉ định số dùng để gọi ra (có thể cấu hình sẵn).\n- **extension** : số extension thực hiện cuộc gọi.\n- **record** : bật ghi âm cuộc gọi, mặc định là không.\n - true : bật ghi âm.\n - false : không bật ghi âm"
+					},
+					"response": [
+						{
+							"name": "Máy nhánh không online",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/clicktocall?domain_name=demo&phone=0977051367&callerid=842871001100&extension=101",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"clicktocall"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "phone",
+											"value": "0977051367"
+										},
+										{
+											"key": "callerid",
+											"value": "842871001100"
+										},
+										{
+											"key": "extension",
+											"value": "101"
+										}
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:41:59 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Extension không online\"\n}"
+						},
+						{
+							"name": "Thành công",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/clicktocall?domain_name=demo&phone=0977051367&callerid=842871001100&extension=101",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"clicktocall"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "phone",
+											"value": "0977051367"
+										},
+										{
+											"key": "callerid",
+											"value": "842871001100"
+										},
+										{
+											"key": "extension",
+											"value": "101"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 13:43:39 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"uuid\": \"0975d6eb-0174-408c-9603-10f56c59c418\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Định tuyến cuộc gọi",
+			"item": [
+				{
+					"name": "Skills Base Routing",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"caller\":\"0977051367\",\r\n    \"callee\":\"842871001100\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "API URL đối tác cấp",
+							"host": [
+								"API URL đối tác cấp"
+							]
+						},
+						"description": "- **caller** : số chủ gọi (số khách hàng gọi vào tổng đài).\n- **callee** : số bị gọi (số của khách hàng).\n**Timeout** : 2 giây"
+					},
+					"response": [
+						{
+							"name": "Kết quả trả về",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"caller\": \"0977051367\",\r\n    \"callee\": \"842871001100\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "API URL đối tác cấp",
+									"host": [
+										"API URL đối tác cấp"
+									]
+								}
+							},
+							"_postman_previewlanguage": "Text",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json",
+									"description": "",
+									"type": "text"
+								}
+							],
+							"cookie": [],
+							"body": "{\r\n    \"destination\":\"1002\"\r\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Máy nhánh",
+			"item": [
+				{
+					"name": "Trạng thái máy nhánh (Online, Offline)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/extension_status?domain_name={{domain_name}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"extension_status"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}"
+								},
+								{
+									"key": "extension",
+									"value": "102",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Trả về trạng thái của tất cả/một máy nhánh.\n- **extension** : số máy nhánh.\n- **domain_name** : thông số được cung cấp ban đầu.\n- **status** : trạng thái của máy nhánh.\n- **network** : địa chỉ online của máy nhánh.\n- **ping** : trạng thái ping cuối cùng.\n - Reachable – đang giữ kết nối\n - Unreachable – mất kết nối\n- **agent** : thông tin thiết bị máy nhánh đang đăng kí."
+					},
+					"response": [
+						{
+							"name": "Thành công",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/vnd.api+json",
+										"type": "text"
+									},
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/extension_status?domain_name=demo",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"extension_status"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 14:18:38 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 5,\n    \"data\": [\n        {\n            \"extension\": \"101\",\n            \"domain\": \"demo\",\n            \"status\": \"Registered(UDP)\",\n            \"network\": \"171.246.105.219:57964\",\n            \"ping\": \"Reachable\",\n            \"agent\": \"MicroSIP/3.19.21\"\n        },\n        {\n            \"extension\": \"102\",\n            \"domain\": \"demo\",\n            \"status\": null,\n            \"network\": null,\n            \"ping\": null,\n            \"agent\": null\n        },\n        {\n            \"extension\": \"103\",\n            \"domain\": \"demo\",\n            \"status\": null,\n            \"network\": null,\n            \"ping\": null,\n            \"agent\": null\n        },\n        {\n            \"extension\": \"104\",\n            \"domain\": \"demo\",\n            \"status\": null,\n            \"network\": null,\n            \"ping\": null,\n            \"agent\": null\n        },\n        {\n            \"extension\": \"105\",\n            \"domain\": \"demo\",\n            \"status\": null,\n            \"network\": null,\n            \"ping\": null,\n            \"agent\": null\n        }\n    ]\n}"
+						},
+						{
+							"name": "Extension 102",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/extension_status?domain_name=demo&extension=102",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"extension_status"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "extension",
+											"value": "102"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 24 Jun 2020 15:12:03 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 1,\n    \"data\": [\n        {\n            \"extension\": \"102\",\n            \"domain\": \"demo\",\n            \"status\": null,\n            \"network\": null,\n            \"ping\": null,\n            \"agent\": null\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Thông tin máy nhánh",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "api-key",
+								"value": "{{api-key}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v2/extension?domain_name={{domain_name}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"extension"
+							],
+							"query": [
+								{
+									"key": "domain_name",
+									"value": "{{domain_name}}"
+								},
+								{
+									"key": "extension",
+									"value": "1001",
+									"disabled": true
+								}
+							]
+						},
+						"description": "- **extension** : máy nhánh.\n- **password** : mật khẩu.\n- **outbound_caller_id_number** : số dùng để gọi ra.\n- **user_record** : ghi âm cuộc gọi.\n- **enabled** : trạng thái sử dụng."
+					},
+					"response": [
+						{
+							"name": "Thông tin máy nhánh",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/extension?domain_name=demo&extension=1001",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"extension"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "extension",
+											"value": "1001"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx/1.10.3"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 28 Jun 2020 10:35:41 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 1,\n    \"data\": [\n        {\n            \"extension\": \"1001\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"842871001100\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        }\n    ]\n}"
+						},
+						{
+							"name": "Tất cả máy nhánh",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{api-key}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/api/v2/extension?domain_name=demo",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"extension"
+									],
+									"query": [
+										{
+											"key": "domain_name",
+											"value": "demo"
+										},
+										{
+											"key": "extension",
+											"value": "1001",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Server",
+									"value": "nginx/1.10.3"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 28 Jun 2020 10:36:26 GMT"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"total\": 10,\n    \"data\": [\n        {\n            \"extension\": \"1010\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1002\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1003\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1004\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1005\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1006\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1007\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1008\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1009\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        },\n        {\n            \"extension\": \"1001\",\n            \"password\": \"password\",\n            \"outbound_caller_id_number\": \"842871001100\",\n            \"user_record\": \"all\",\n            \"enabled\": \"true\"\n        }\n    ]\n}"
+						}
+					]
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

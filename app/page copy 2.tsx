@@ -30,7 +30,7 @@ interface ApiResponse {
 
 // IndexedDB utility functions
 const DB_NAME = 'InvoiceDB';
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 const STORE_NAME_SOLD = 'invoice_sold';
 const STORE_NAME_PURCHASE = 'invoice_purchase';
 

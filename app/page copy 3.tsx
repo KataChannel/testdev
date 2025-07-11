@@ -1,12 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { db, InvoiceData } from '@/lib/database';
-import { apiService } from '@/lib/api';
-import { QuickActions } from '@/components/Navigation';
-import { CONFIG } from '@/lib/config';
-import { delay } from '@/lib/utils';
 
 interface QueryParams {
   fromDate: string;
@@ -15,6 +9,11 @@ interface QueryParams {
   size: number;
   token: string;
   invoiceType: 'sold' | 'purchase';
+}
+
+interface InvoiceData {
+  id: string;
+  [key: string]: any;
 }
 
 interface SavedDataState {
@@ -31,10 +30,9 @@ interface ApiResponse {
 
 // IndexedDB utility functions
 const DB_NAME = 'InvoiceDB';
-const DB_VERSION = 4;
+const DB_VERSION = 3;
 const STORE_NAME_SOLD = 'invoice_sold';
 const STORE_NAME_PURCHASE = 'invoice_purchase';
-const STORE_NAME_DETAILS = 'invoice_details';
 
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
@@ -52,10 +50,6 @@ const openDB = (): Promise<IDBDatabase> => {
       
       if (!db.objectStoreNames.contains(STORE_NAME_PURCHASE)) {
         db.createObjectStore(STORE_NAME_PURCHASE, { keyPath: 'id' });
-      }
-      
-      if (!db.objectStoreNames.contains(STORE_NAME_DETAILS)) {
-        db.createObjectStore(STORE_NAME_DETAILS, { keyPath: 'id' });
       }
     };
   });
@@ -108,18 +102,16 @@ const clearIndexedDB = async (storeName?: string): Promise<void> => {
   if (storeName) {
     const transaction = db.transaction([storeName], 'readwrite');
     const store = transaction.objectStore(storeName);
-    
     await new Promise<void>((resolve, reject) => {
-      const clearRequest = store.clear();
-      clearRequest.onsuccess = () => resolve();
-      clearRequest.onerror = () => reject(clearRequest.error);
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   } else {
-    // Clear all stores
-    const transaction = db.transaction([STORE_NAME_SOLD, STORE_NAME_PURCHASE, STORE_NAME_DETAILS], 'readwrite');
+    // Clear both stores
+    const transaction = db.transaction([STORE_NAME_SOLD, STORE_NAME_PURCHASE], 'readwrite');
     const soldStore = transaction.objectStore(STORE_NAME_SOLD);
     const purchaseStore = transaction.objectStore(STORE_NAME_PURCHASE);
-    const detailsStore = transaction.objectStore(STORE_NAME_DETAILS);
     
     await Promise.all([
       new Promise<void>((resolve, reject) => {
@@ -129,11 +121,6 @@ const clearIndexedDB = async (storeName?: string): Promise<void> => {
       }),
       new Promise<void>((resolve, reject) => {
         const request = purchaseStore.clear();
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      }),
-      new Promise<void>((resolve, reject) => {
-        const request = detailsStore.clear();
         request.onsuccess = () => resolve();
         request.onerror = () => reject(request.error);
       })
@@ -187,29 +174,23 @@ const exportAllData = async (): Promise<void> => {
     throw new Error(`Lỗi khi xuất dữ liệu: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
+
 // Import data from JSON file to IndexedDB
 const importAllData = async (file: File): Promise<{success: boolean, message: string}> => {
   try {
-    // Read and parse the file
-    const fileContent = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
-    });
-
+    const fileContent = await file.text();
     const importData = JSON.parse(fileContent);
-
-    // Validate data structure
-    if (!importData.data || typeof importData.data !== 'object') {
-      throw new Error('Invalid data format');
+    
+    // Validate file structure
+    if (!importData.data || !importData.data.sold || !importData.data.purchase) {
+      throw new Error('File không đúng định dạng. Cần có cấu trúc data.sold và data.purchase');
     }
 
     const db = await openDB();
     
-    // Clear existing data first
-    const clearTransaction = db.transaction([STORE_NAME_SOLD, STORE_NAME_PURCHASE, STORE_NAME_DETAILS], 'readwrite');
-    const clearPromises = [
+    // Clear existing data first (optional - you can modify this behavior)
+    const clearTransaction = db.transaction([STORE_NAME_SOLD, STORE_NAME_PURCHASE, 'invoice_details'], 'readwrite');
+    await Promise.all([
       new Promise<void>((resolve, reject) => {
         const clearRequest = clearTransaction.objectStore(STORE_NAME_SOLD).clear();
         clearRequest.onsuccess = () => resolve();
@@ -221,16 +202,18 @@ const importAllData = async (file: File): Promise<{success: boolean, message: st
         clearRequest.onerror = () => reject(clearRequest.error);
       }),
       new Promise<void>((resolve, reject) => {
-        const clearRequest = clearTransaction.objectStore(STORE_NAME_DETAILS).clear();
-        clearRequest.onsuccess = () => resolve();
-        clearRequest.onerror = () => reject(clearRequest.error);
+        if (db.objectStoreNames.contains('invoice_details')) {
+          const clearRequest = clearTransaction.objectStore('invoice_details').clear();
+          clearRequest.onsuccess = () => resolve();
+          clearRequest.onerror = () => reject(clearRequest.error);
+        } else {
+          resolve();
+        }
       })
-    ];
-    
-    await Promise.all(clearPromises);
+    ]);
 
     // Import sold invoices
-    if (importData.data.sold && importData.data.sold.length > 0) {
+    if (importData.data.sold.length > 0) {
       const soldTransaction = db.transaction([STORE_NAME_SOLD], 'readwrite');
       const soldStore = soldTransaction.objectStore(STORE_NAME_SOLD);
       
@@ -244,7 +227,7 @@ const importAllData = async (file: File): Promise<{success: boolean, message: st
     }
 
     // Import purchase invoices
-    if (importData.data.purchase && importData.data.purchase.length > 0) {
+    if (importData.data.purchase.length > 0) {
       const purchaseTransaction = db.transaction([STORE_NAME_PURCHASE], 'readwrite');
       const purchaseStore = purchaseTransaction.objectStore(STORE_NAME_PURCHASE);
       
@@ -258,10 +241,10 @@ const importAllData = async (file: File): Promise<{success: boolean, message: st
     }
 
     // Import details if exists
-    if (importData.data.details && importData.data.details.length > 0) {
-      const detailsTransaction = db.transaction([STORE_NAME_DETAILS], 'readwrite');
-      const detailsStore = detailsTransaction.objectStore(STORE_NAME_DETAILS);
-      console.log('importData.data.details:', importData.data.details);
+    if (importData.data.details && importData.data.details.length > 0 && db.objectStoreNames.contains('invoice_details')) {
+      const detailsTransaction = db.transaction(['invoice_details'], 'readwrite');
+      const detailsStore = detailsTransaction.objectStore('invoice_details');
+      
       for (const item of importData.data.details) {
         await new Promise<void>((resolve, reject) => {
           const addRequest = detailsStore.add(item);
@@ -730,9 +713,7 @@ export default function Home() {
           loadFromIndexedDB(STORE_NAME_SOLD),
           loadFromIndexedDB(STORE_NAME_PURCHASE)
         ]);
-        console.log('soldData:', soldData);
-        console.log('purchaseData:', purchaseData);
-
+        
         setSavedData({
           sold: soldData,
           purchase: purchaseData
